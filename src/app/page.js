@@ -1,5 +1,6 @@
-import Image from "next/image";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <div className="text-red-500">Hello</div>;
+  // temporary: redirect root to /problems
+  redirect("/problems");
 }
