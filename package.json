@@ -12,6 +12,7 @@
     "@blocknote/core": "^0.35.0",
     "@blocknote/react": "^0.35.0",
     "@blocknote/shadcn": "^0.35.0",
+    "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.3",
     "class-variance-authority": "^0.7.1",

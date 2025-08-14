@@ -4,8 +4,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
-
-// shadcn select
 import {
   Select,
   SelectTrigger,
@@ -14,17 +12,20 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
+// dynamic imports
 const BlockNoteEditor = dynamic(() => import("@/components/BlockNoteEditor"), {
   ssr: false,
-  loading: () => (
-    <div className="w-full h-[75vh] mt-8 p-8 rounded-lg border border-border bg-background text-sm text-muted-foreground flex items-center justify-center">
-      Loading editor...
-    </div>
-  ),
+});
+const TestCasesPanel = dynamic(() => import("@/components/TestCasesPanel"), {
+  ssr: false,
+});
+const CodeStubPanel = dynamic(() => import("@/components/CodeStubPanel"), {
+  ssr: false,
 });
 
 export default function CreateProblem() {
   const [showEditor, setShowEditor] = useState(false);
+  const [activeTab, setActiveTab] = useState("description"); // description | testcases | codestub
   const [markdown, setMarkdown] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
 
@@ -34,8 +35,15 @@ export default function CreateProblem() {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const titleInputRef = useRef(null);
 
-  // NEW: difficulty state
   const [difficulty, setDifficulty] = useState("easy");
+  const [testCases, setTestCases] = useState([{ input: "", output: "" }]);
+
+  // NEW: code stub state
+  const [codeStub, setCodeStub] = useState({
+    language: "JAVA",
+    startSnippet: "",
+    endSnippet: "",
+  });
 
   useEffect(() => {
     if (isEditingTitle && titleInputRef.current) {
@@ -45,15 +53,70 @@ export default function CreateProblem() {
     }
   }, [isEditingTitle]);
 
+  // ---- Helper: build request body matching your Mongoose schema ----
+  const buildProblemPayload = () => {
+    // Clean test cases: keep only rows where BOTH input & output have content
+    const cleanedTestCases = testCases
+      .map((tc) => ({
+        input: (tc.input || "").trim(),
+        output: (tc.output || "").trim(),
+      }))
+      .filter((tc) => tc.input && tc.output);
+
+    // Build codeStubs array (schema expects an array)
+    const codeStubs = [];
+    if (codeStub.language) {
+      const hasAnySnippet =
+        (codeStub.startSnippet && codeStub.startSnippet.trim()) ||
+        (codeStub.endSnippet && codeStub.endSnippet.trim());
+
+      if (hasAnySnippet) {
+        codeStubs.push({
+          language: codeStub.language.toUpperCase(), // JAVA | CPP | PYTHON
+          startSnippet: codeStub.startSnippet || "",
+          endSnippet: codeStub.endSnippet || "",
+          // userSnippet intentionally omitted (user will fill later)
+        });
+      }
+    }
+
+    return {
+      title: title.trim(),
+      description: markdown.trim(), // markdown from BlockNote
+      difficulty, // easy | medium | hard
+      testCases: cleanedTestCases, // [{input, output}, ...]
+      codeStubs, // [{language,startSnippet,endSnippet}]
+      editorial: "", // (add if you later collect it)
+    };
+  };
+
   const handlePublish = async () => {
     setIsPublishing(true);
     try {
-      console.log("Publish title:", title);
-      console.log("Difficulty:", difficulty);
-      console.log("Publish markdown:\n", markdown);
-      // await fetch("/api/problems", {method:"POST", body: JSON.stringify({ title, difficulty, markdown })});
+      // Basic client-side validation
+      if (!title.trim()) throw new Error("Title required");
+      if (!markdown.trim()) throw new Error("Description required");
+      const payload = buildProblemPayload();
+
+      console.log("Publish payload:", payload);
+
+      const res = await fetch("http://localhost:3001/api/v1/problems", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || "Failed to publish");
+      }
+
+      const created = await res.json();
+      console.log("Created problem:", created);
+      // TODO: navigate or show success toast
     } catch (e) {
-      console.error(e);
+      console.error("Publish failed:", e);
+      // TODO: show user-facing error (toast/snackbar)
     } finally {
       setIsPublishing(false);
     }
@@ -66,8 +129,55 @@ export default function CreateProblem() {
       {showEditor && (
         <header className="sticky top-0 z-20 w-full bg-background/80 backdrop-blur border-b border-border">
           <div className="mx-auto max-w-7xl px-6 h-14 flex items-center justify-between gap-4">
-            {/* Left side controls */}
             <div className="flex items-center gap-3 flex-1 min-w-0">
+              {/* Difficulty */}
+              <Select
+                value={difficulty}
+                onValueChange={(v) => setDifficulty(v)}
+              >
+                <SelectTrigger className="w-32 h-8 text-xs">
+                  <SelectValue placeholder="Difficulty" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="easy">Easy</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="hard">Hard</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Tab Buttons */}
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant={
+                    activeTab === "description" ? "default" : "secondary"
+                  }
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => setActiveTab("description")}
+                >
+                  Problem Description
+                </Button>
+                <Button
+                  type="button"
+                  variant={activeTab === "testcases" ? "default" : "secondary"}
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => setActiveTab("testcases")}
+                >
+                  Test Cases
+                </Button>
+                <Button
+                  type="button"
+                  variant={activeTab === "codestub" ? "default" : "secondary"}
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => setActiveTab("codestub")}
+                >
+                  Code Stub
+                </Button>
+              </div>
+
               {/* Editable Title */}
               <div className="flex-1 min-w-0">
                 {!isEditingTitle ? (
@@ -85,55 +195,26 @@ export default function CreateProblem() {
                     onChange={(e) => setTitle(e.target.value)}
                     onBlur={() => setIsEditingTitle(false)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === "Escape")
+                      if (e.key === "Enter" || e.key === "Escape") {
                         setIsEditingTitle(false);
+                      }
                     }}
                     className="w-full bg-transparent border border-border rounded px-2 py-1 text-sm text-foreground focus:outline-none focus:ring"
                   />
                 )}
               </div>
-              {/* Difficulty Select */}
-              <Select
-                value={difficulty}
-                onValueChange={(v) => setDifficulty(v)}
-              >
-                <SelectTrigger className="w-32 h-8 text-xs">
-                  <SelectValue placeholder="Difficulty" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="easy">Easy</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="hard">Hard</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Test Cases Button */}
-              <Button
-                variant="secondary"
-                size="sm"
-                className="h-8 text-xs"
-                onClick={() => console.log("Open Test Cases")}
-              >
-                Test Cases
-              </Button>
-
-              {/* Code Stub Button */}
-              <Button
-                variant="secondary"
-                size="sm"
-                className="h-8 text-xs"
-                onClick={() => console.log("Open Code Stub")}
-              >
-                Code Stub
-              </Button>
             </div>
 
-            {/* Right side publish */}
+            {/* Publish */}
             <Button
               variant="default"
               size="sm"
               onClick={handlePublish}
-              disabled={isPublishing || !safeMarkdown.trim()}
+              disabled={
+                isPublishing ||
+                !title.trim() ||
+                (activeTab === "description" && !safeMarkdown.trim())
+              }
             >
               {isPublishing && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -159,24 +240,32 @@ export default function CreateProblem() {
           </div>
         ) : (
           <div className="mx-auto max-w-7xl">
-            <div className="flex flex-col lg:flex-row gap-8">
-              <div className="flex-1 min-w-0">
-                <dynamic
-                // placeholder: dynamic is already defined above as BlockNoteEditor
-                />
-                <BlockNoteEditor onMarkdownChange={setMarkdown} />
-              </div>
-              <div className="w-full lg:w-[40%] flex flex-col">
-                <h2 className="text-sm font-semibold mb-2 text-muted-foreground">
-                  Preview (Markdown)
-                </h2>
-                <div className="h-[76vh] border border-border rounded-lg bg-muted/30 p-4 overflow-auto text-sm whitespace-pre-wrap font-mono leading-relaxed">
-                  {safeMarkdown.trim()
-                    ? safeMarkdown
-                    : "Start typing in the editor to see markdown preview..."}
+            {activeTab === "description" && (
+              <div className="flex flex-col lg:flex-row gap-8">
+                <div className="flex-1 min-w-0">
+                  <BlockNoteEditor onMarkdownChange={setMarkdown} />
+                </div>
+                <div className="w-full lg:w-[40%] flex flex-col">
+                  <h2 className="text-sm font-semibold mb-2 text-muted-foreground">
+                    Preview (Markdown)
+                  </h2>
+                  <div className="h-[76vh] border border-border rounded-lg bg-muted/30 p-4 overflow-auto text-sm whitespace-pre-wrap font-mono leading-relaxed">
+                    {safeMarkdown.trim()
+                      ? safeMarkdown
+                      : "Start typing in the editor to see markdown preview..."}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+            {activeTab === "testcases" && (
+              <TestCasesPanel
+                testCases={testCases}
+                setTestCases={setTestCases}
+              />
+            )}
+            {activeTab === "codestub" && (
+              <CodeStubPanel codeStub={codeStub} setCodeStub={setCodeStub} />
+            )}
           </div>
         )}
       </main>
