@@ -17,6 +17,7 @@ export const publishProblem = createAsyncThunk(
       }
 
       const created = await res.json();
+      console.log("Problem created:", created);
       return created;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -82,6 +83,10 @@ const createProblemSlice = createSlice({
     },
     updateCodeStubForLanguage: (state, action) => {
       const { language, codeStub } = action.payload;
+      // Ensure the language key exists before updating
+      if (!state.codeStubs[language]) {
+        state.codeStubs[language] = { startSnippet: "", endSnippet: "", userSnippet: "" };
+      }
       state.codeStubs[language] = { ...state.codeStubs[language], ...codeStub };
     },
 

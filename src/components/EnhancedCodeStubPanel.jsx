@@ -22,21 +22,28 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
 
 const monacoLangMap = {
   JAVA: "java",
-  CPP: "cpp", 
+  CPP: "cpp",
   PYTHON: "python",
 };
 
 const DEBOUNCE_MS = 500;
 
-function EnhancedCodeStubPanelComponent({ codeStubs, currentLanguage, onLanguageChange, onCodeStubUpdate }) {
+function EnhancedCodeStubPanelComponent({
+  codeStubs,
+  currentLanguage,
+  onLanguageChange,
+  onCodeStubUpdate,
+}) {
+  const prevLanguageRef = useRef(currentLanguage);
+  
   // Get current language code stub or initialize empty
   const currentStub = codeStubs[currentLanguage] || {
     startSnippet: "",
-    endSnippet: "", 
+    endSnippet: "",
     userSnippet: "",
   };
 
-  // Keep local refs (NOT state) so typing doesn't re-render parent / this component
+  // Keep local refs for current editor content
   const starterRef = useRef(currentStub.startSnippet || "");
   const endRef = useRef(currentStub.endSnippet || "");
   const userRef = useRef(currentStub.userSnippet || "");
@@ -48,27 +55,32 @@ function EnhancedCodeStubPanelComponent({ codeStubs, currentLanguage, onLanguage
 
   const monacoLanguage = monacoLangMap[currentLanguage] || "plaintext";
 
-  // Update refs when language changes
+  // Handle language change - only update when language actually changes
   useEffect(() => {
-    const stub = codeStubs[currentLanguage] || {
-      startSnippet: "",
-      endSnippet: "",
-      userSnippet: "",
-    };
-    
-    starterRef.current = stub.startSnippet || "";
-    endRef.current = stub.endSnippet || "";
-    userRef.current = stub.userSnippet || "";
+    if (prevLanguageRef.current !== currentLanguage) {
+      const newStub = codeStubs[currentLanguage] || {
+        startSnippet: "",
+        endSnippet: "",
+        userSnippet: "",
+      };
 
-    // Update editor values if they exist
-    if (starterEditorRef.current) {
-      starterEditorRef.current.setValue(starterRef.current);
-    }
-    if (endEditorRef.current) {
-      endEditorRef.current.setValue(endRef.current);
-    }
-    if (userEditorRef.current) {
-      userEditorRef.current.setValue(userRef.current);
+      // Update refs
+      starterRef.current = newStub.startSnippet || "";
+      endRef.current = newStub.endSnippet || "";
+      userRef.current = newStub.userSnippet || "";
+
+      // Update editors if mounted
+      if (starterEditorRef.current) {
+        starterEditorRef.current.setValue(starterRef.current);
+      }
+      if (endEditorRef.current) {
+        endEditorRef.current.setValue(endRef.current);
+      }
+      if (userEditorRef.current) {
+        userEditorRef.current.setValue(userRef.current);
+      }
+
+      prevLanguageRef.current = currentLanguage;
     }
   }, [currentLanguage, codeStubs]);
 
@@ -87,7 +99,7 @@ function EnhancedCodeStubPanelComponent({ codeStubs, currentLanguage, onLanguage
     fontSize: 13,
     minimap: { enabled: false },
     automaticLayout: true,
-    wordWrap: "on", 
+    wordWrap: "on",
     padding: { top: 8, bottom: 8 },
     scrollBeyondLastLine: false,
     smoothScrolling: true,
@@ -150,8 +162,10 @@ function EnhancedCodeStubPanelComponent({ codeStubs, currentLanguage, onLanguage
         </div>
         <div className="flex-1">
           <p className="text-xs text-muted-foreground">
-            Configure code stubs for <span className="font-medium">{currentLanguage}</span>. 
-            Each language can have different code stubs. Auto-saves after {DEBOUNCE_MS}ms.
+            Configure code stubs for{" "}
+            <span className="font-medium">{currentLanguage}</span>. Each
+            language can have different code stubs. Auto-saves after{" "}
+            {DEBOUNCE_MS}ms.
           </p>
         </div>
       </div>
@@ -169,7 +183,7 @@ function EnhancedCodeStubPanelComponent({ codeStubs, currentLanguage, onLanguage
           <div className="border border-border rounded-lg overflow-hidden bg-muted/5 h-[45vh]">
             <MonacoEditor
               path={`starter-${currentLanguage}`}
-              defaultLanguage={monacoLanguage}
+              language={monacoLanguage}
               theme="vs-dark"
               defaultValue={starterRef.current}
               onMount={handleStarterMount}
@@ -192,8 +206,8 @@ function EnhancedCodeStubPanelComponent({ codeStubs, currentLanguage, onLanguage
           <div className="border border-border rounded-lg overflow-hidden bg-muted/5 h-[45vh]">
             <MonacoEditor
               path={`user-${currentLanguage}`}
-              defaultLanguage={monacoLanguage}
-              theme="vs-dark" 
+              language={monacoLanguage}
+              theme="vs-dark"
               defaultValue={userRef.current}
               onMount={handleUserMount}
               options={commonOptions}
@@ -215,7 +229,7 @@ function EnhancedCodeStubPanelComponent({ codeStubs, currentLanguage, onLanguage
           <div className="border border-border rounded-lg overflow-hidden bg-muted/5 h-[45vh]">
             <MonacoEditor
               path={`end-${currentLanguage}`}
-              defaultLanguage={monacoLanguage}
+              language={monacoLanguage}
               theme="vs-dark"
               defaultValue={endRef.current}
               onMount={handleEndMount}
@@ -230,7 +244,9 @@ function EnhancedCodeStubPanelComponent({ codeStubs, currentLanguage, onLanguage
 
       {/* Language status indicator */}
       <div className="flex items-center gap-4 pt-2 border-t border-border">
-        <span className="text-xs text-muted-foreground">Configured languages:</span>
+        <span className="text-xs text-muted-foreground">
+          Configured languages:
+        </span>
         <div className="flex items-center gap-2">
           {Object.keys(codeStubs).map((lang) => (
             <div
@@ -245,7 +261,9 @@ function EnhancedCodeStubPanelComponent({ codeStubs, currentLanguage, onLanguage
             </div>
           ))}
           {Object.keys(codeStubs).length === 0 && (
-            <span className="text-xs text-muted-foreground italic">None configured yet</span>
+            <span className="text-xs text-muted-foreground italic">
+              None configured yet
+            </span>
           )}
         </div>
       </div>

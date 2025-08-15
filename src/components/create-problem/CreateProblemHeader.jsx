@@ -96,6 +96,7 @@ export default function CreateProblemHeader() {
     }
 
     const payload = buildProblemPayload();
+    console.log("Publishing problem with payload:", payload);
     dispatch(publishProblem(payload));
   };
 
