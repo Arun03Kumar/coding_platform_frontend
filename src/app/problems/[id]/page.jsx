@@ -249,14 +249,18 @@ export default function ProblemDetailPage() {
               </p>
             </div>
 
-            {/* Output content for selected tab */}
+            {/* Updated output logic based on runOutput.response array */}
             {outputTab === "compile" ? (
               <div className="text-xs whitespace-pre-wrap">
-                {runOutput?.compile
-                  ? typeof runOutput.compile === "string"
-                    ? runOutput.compile
-                    : JSON.stringify(runOutput.compile, null, 2)
-                  : "No compilation output yet."}
+                {runOutput
+                  ? (() => {
+                      const firstError = runOutput?.response?.find(
+                        (r) => r.status === "ERROR"
+                      );
+                      if (firstError) return firstError.output || "Error.";
+                      return "No compilation error.";
+                    })()
+                  : "Run code to view results."}
               </div>
             ) : (
               (() => {
@@ -264,7 +268,15 @@ export default function ProblemDetailPage() {
                 if (!match) return null;
                 const idx = Number(match[1]);
                 const tc = problem?.testCases?.[idx];
-                const tcOutput = runOutput?.testcases?.[idx];
+                const resp = runOutput?.response?.[idx];
+                const status = resp?.status;
+                const isSuccess = status === "SUCCESS";
+                const isError = status === "ERROR";
+                const statusClass = isSuccess
+                  ? "bg-emerald-500/15 text-emerald-500 border border-emerald-500/30"
+                  : isError
+                  ? "bg-rose-500/15 text-rose-500 border border-rose-500/30"
+                  : "bg-amber-500/15 text-amber-500 border border-amber-500/30";
                 return (
                   <div className="space-y-2 text-xs">
                     <div>
@@ -283,18 +295,29 @@ export default function ProblemDetailPage() {
                         {tc?.output ?? "-"}
                       </pre>
                     </div>
-                    <div>
+                    <div className="flex items-center gap-2">
                       <p className="text-[10px] font-semibold text-muted-foreground">
                         Run Output
                       </p>
-                      <pre className="whitespace-pre-wrap bg-background/30 p-2 rounded">
-                        {tcOutput
-                          ? typeof tcOutput === "string"
-                            ? tcOutput
-                            : JSON.stringify(tcOutput, null, 2)
-                          : "No run output for this test yet."}
-                      </pre>
+                      {status && (
+                        <span
+                          className={cn(
+                            "text-[10px] font-semibold px-2 py-0.5 rounded",
+                            statusClass
+                          )}
+                        >
+                          {status}
+                        </span>
+                      )}
                     </div>
+                    <pre className="whitespace-pre-wrap bg-background/30 p-2 rounded">
+                      {resp
+                        ? resp.output ??
+                          (typeof resp === "string"
+                            ? resp
+                            : JSON.stringify(resp, null, 2))
+                        : "No run output for this test yet."}
+                    </pre>
                   </div>
                 );
               })()
