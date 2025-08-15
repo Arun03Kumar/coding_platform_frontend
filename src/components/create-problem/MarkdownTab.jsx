@@ -1,42 +1,41 @@
 "use client";
 import React from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { Textarea } from "@/components/ui/textarea";
+import { setMarkdownText } from "@/store/createProblemSlice";
 import ReactMarkdown from "react-markdown";
 import DOMPurify from "dompurify";
-import { cn } from "@/lib/utils";
 
-export default function ProblemDescription() {
-  const problem = useSelector((state) => state.problem.data);
-  const loading = useSelector((state) => state.problem.loading);
-  const error = useSelector((state) => state.problem.error);
+export default function MarkdownTab() {
+  const dispatch = useDispatch();
+  const markdownText = useSelector((state) => state.createProblem.markdownText);
 
-  const difficultyBadge = (diff) =>
-    cn(
-      "text-[10px] uppercase font-semibold px-2 py-1 rounded",
-      diff === "easy" && "bg-emerald-500/15 text-emerald-500",
-      diff === "medium" && "bg-amber-500/15 text-amber-500",
-      diff === "hard" && "bg-rose-500/15 text-rose-500"
-    );
+  const handleMarkdownChange = (e) => {
+    dispatch(setMarkdownText(e.target.value));
+  };
 
   return (
-    <section className="lg:w-[45%] xl:w-[40%] border-r border-border flex flex-col h-full">
-      <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
-        {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        {!loading && !error && problem && (
-          <>
-            <div className="flex items-center gap-3">
-              <span className={difficultyBadge(problem.difficulty)}>
-                {problem.difficulty}
-              </span>
-            </div>
-            <h2 className="text-base font-semibold tracking-tight">
-              Description
-            </h2>
+    <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex-1 min-w-0">
+        <h2 className="text-sm font-semibold mb-2 text-muted-foreground">
+          Markdown Input
+        </h2>
+        <Textarea
+          value={markdownText}
+          onChange={handleMarkdownChange}
+          placeholder="Paste your markdown here..."
+          className="h-[76vh] resize-none font-mono text-sm"
+        />
+      </div>
+      <div className="w-full lg:w-[40%] flex flex-col">
+        <h2 className="text-sm font-semibold mb-2 text-muted-foreground">
+          Preview
+        </h2>
+        <div className="h-[76vh] border border-border rounded-lg bg-muted/30 p-4 overflow-auto">
+          {markdownText.trim() ? (
             <article className="prose dark:prose-invert max-w-none text-sm leading-relaxed">
               <ReactMarkdown
                 components={{
-                  // Custom components for better styling
                   h1: ({ children }) => (
                     <h1 className="text-lg font-bold mb-3">{children}</h1>
                   ),
@@ -81,12 +80,16 @@ export default function ProblemDescription() {
                   em: ({ children }) => <em className="italic">{children}</em>,
                 }}
               >
-                {DOMPurify.sanitize(problem.description || "")}
+                {DOMPurify.sanitize(markdownText)}
               </ReactMarkdown>
             </article>
-          </>
-        )}
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Start typing markdown to see the preview...
+            </p>
+          )}
+        </div>
       </div>
-    </section>
+    </div>
   );
 }

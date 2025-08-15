@@ -34,7 +34,7 @@ export default function ProblemDetailPage() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-screen">
+    <div className="flex flex-col h-screen">
       <ProblemHeader problemId={id} />
       <main className="flex flex-col lg:flex-row flex-1 min-h-0">
         <ProblemDescription />

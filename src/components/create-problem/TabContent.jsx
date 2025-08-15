@@ -2,6 +2,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import DescriptionTab from "./DescriptionTab";
+import MarkdownTab from "./MarkdownTab";
 import TestCasesTab from "./TestCasesTab";
 import CodeStubTab from "./CodeStubTab";
 
@@ -12,6 +13,8 @@ export default function TabContent() {
     switch (activeTab) {
       case "description":
         return <DescriptionTab />;
+      case "markdown":
+        return <MarkdownTab />;
       case "testcases":
         return <TestCasesTab />;
       case "codestub":

@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { clearPublishState } from "@/store/createProblemSlice";
+import toast from "react-hot-toast";
 
 export const useCreateProblemNotifications = () => {
   const dispatch = useDispatch();
@@ -11,9 +12,10 @@ export const useCreateProblemNotifications = () => {
 
   useEffect(() => {
     if (publishSuccess) {
-      console.log("Problem published successfully!");
-      // TODO: Replace with toast notification
-      // TODO: Navigate to problem list or show success message
+      toast.success("Problem published successfully!", {
+        duration: 4000,
+        position: "top-right",
+      });
 
       // Clear success state after handling
       const timer = setTimeout(() => {
@@ -26,8 +28,10 @@ export const useCreateProblemNotifications = () => {
 
   useEffect(() => {
     if (publishError) {
-      console.error("Failed to publish problem:", publishError);
-      // TODO: Replace with error toast notification
+      toast.error(`Failed to publish problem: ${publishError}`, {
+        duration: 6000,
+        position: "top-right",
+      });
 
       // Clear error state after showing
       const timer = setTimeout(() => {

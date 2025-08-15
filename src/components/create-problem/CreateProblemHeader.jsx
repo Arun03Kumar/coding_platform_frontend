@@ -28,8 +28,9 @@ export default function CreateProblemHeader() {
     isEditingTitle,
     difficulty,
     description,
+    markdownText,
     testCases,
-    codeStub,
+    codeStubs,
     isPublishing,
   } = useSelector((state) => state.createProblem);
 
@@ -50,28 +51,33 @@ export default function CreateProblemHeader() {
       }))
       .filter((tc) => tc.input && tc.output);
 
-    // Build codeStubs array (schema expects an array)
-    const codeStubs = [];
-    if (codeStub.language) {
+    // Build codeStubs array from the codeStubs object
+    const codeStubsArray = [];
+    Object.entries(codeStubs).forEach(([language, stub]) => {
       const hasAnySnippet =
-        (codeStub.startSnippet && codeStub.startSnippet.trim()) ||
-        (codeStub.endSnippet && codeStub.endSnippet.trim());
+        (stub.startSnippet && stub.startSnippet.trim()) ||
+        (stub.endSnippet && stub.endSnippet.trim()) ||
+        (stub.userSnippet && stub.userSnippet.trim());
 
       if (hasAnySnippet) {
-        codeStubs.push({
-          language: codeStub.language.toUpperCase(),
-          startSnippet: codeStub.startSnippet || "",
-          endSnippet: codeStub.endSnippet || "",
+        codeStubsArray.push({
+          language: language.toUpperCase(),
+          startSnippet: stub.startSnippet || "",
+          endSnippet: stub.endSnippet || "",
+          userSnippet: stub.userSnippet || "",
         });
       }
-    }
+    });
+
+    // Use markdown text if available, otherwise use description from BlockNote
+    const finalDescription = markdownText.trim() || description.trim();
 
     return {
       title: title.trim(),
-      description: description.trim(),
+      description: finalDescription,
       difficulty,
       testCases: cleanedTestCases,
-      codeStubs,
+      codeStubs: codeStubsArray,
       editorial: "",
     };
   };
@@ -82,7 +88,9 @@ export default function CreateProblemHeader() {
       console.error("Title required");
       return;
     }
-    if (!description.trim()) {
+
+    const finalDescription = markdownText.trim() || description.trim();
+    if (!finalDescription) {
       console.error("Description required");
       return;
     }
@@ -94,7 +102,9 @@ export default function CreateProblemHeader() {
   const isPublishDisabled =
     isPublishing ||
     !title.trim() ||
-    (activeTab === "description" && !description.trim());
+    (activeTab === "description" &&
+      !description.trim() &&
+      !markdownText.trim());
 
   return (
     <header className="sticky top-0 z-20 w-full bg-background/80 backdrop-blur border-b border-border">
@@ -125,6 +135,15 @@ export default function CreateProblemHeader() {
               onClick={() => dispatch(setActiveTab("description"))}
             >
               Problem Description
+            </Button>
+            <Button
+              type="button"
+              variant={activeTab === "markdown" ? "default" : "secondary"}
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => dispatch(setActiveTab("markdown"))}
+            >
+              Markdown
             </Button>
             <Button
               type="button"

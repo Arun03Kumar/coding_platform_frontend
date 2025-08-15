@@ -29,20 +29,18 @@ const createProblemSlice = createSlice({
   initialState: {
     // UI State
     showEditor: false,
-    activeTab: "description", // description | testcases | codestub
+    activeTab: "description", // description | markdown | testcases | codestub
     isEditingTitle: false,
     isPublishing: false,
 
     // Problem Data
     title: "Title of Problem (double click to change)",
-    description: "", // markdown content
+    description: "", // markdown content from BlockNote editor
+    markdownText: "", // raw markdown text from textarea
     difficulty: "easy",
     testCases: [{ input: "", output: "" }],
-    codeStub: {
-      language: "JAVA",
-      startSnippet: "",
-      endSnippet: "",
-    },
+    codeStubs: {}, // Object with language as key: { "JAVA": { startSnippet: "", endSnippet: "", userSnippet: "" }, ... }
+    currentCodeStubLanguage: "JAVA", // Currently selected language for code stub editing
 
     // API State
     publishError: null,
@@ -67,27 +65,35 @@ const createProblemSlice = createSlice({
     setDescription: (state, action) => {
       state.description = action.payload;
     },
+    setMarkdownText: (state, action) => {
+      state.markdownText = action.payload;
+    },
     setDifficulty: (state, action) => {
       state.difficulty = action.payload;
     },
     setTestCases: (state, action) => {
       state.testCases = action.payload;
     },
-    setCodeStub: (state, action) => {
-      state.codeStub = { ...state.codeStub, ...action.payload };
+    setCodeStubs: (state, action) => {
+      state.codeStubs = { ...state.codeStubs, ...action.payload };
+    },
+    setCurrentCodeStubLanguage: (state, action) => {
+      state.currentCodeStubLanguage = action.payload;
+    },
+    updateCodeStubForLanguage: (state, action) => {
+      const { language, codeStub } = action.payload;
+      state.codeStubs[language] = { ...state.codeStubs[language], ...codeStub };
     },
 
     // Reset Actions
     resetForm: (state) => {
       state.title = "Title of Problem (double click to change)";
       state.description = "";
+      state.markdownText = "";
       state.difficulty = "easy";
       state.testCases = [{ input: "", output: "" }];
-      state.codeStub = {
-        language: "JAVA",
-        startSnippet: "",
-        endSnippet: "",
-      };
+      state.codeStubs = {};
+      state.currentCodeStubLanguage = "JAVA";
       state.publishSuccess = false;
       state.publishError = null;
     },
@@ -124,9 +130,12 @@ export const {
   setIsEditingTitle,
   setTitle,
   setDescription,
+  setMarkdownText,
   setDifficulty,
   setTestCases,
-  setCodeStub,
+  setCodeStubs,
+  setCurrentCodeStubLanguage,
+  updateCodeStubForLanguage,
   resetForm,
   clearPublishState,
 } = createProblemSlice.actions;
