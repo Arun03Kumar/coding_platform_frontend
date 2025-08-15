@@ -40,7 +40,11 @@ const createProblemSlice = createSlice({
     markdownText: "", // raw markdown text from textarea
     difficulty: "easy",
     testCases: [{ input: "", output: "" }],
-    codeStubs: {}, // Object with language as key: { "JAVA": { startSnippet: "", endSnippet: "", userSnippet: "" }, ... }
+    codeStubs: {
+      JAVA: { startSnippet: "", endSnippet: "", userSnippet: "" },
+      CPP: { startSnippet: "", endSnippet: "", userSnippet: "" },
+      PYTHON: { startSnippet: "", endSnippet: "", userSnippet: "" },
+    }, // Pre-initialize supported languages
     currentCodeStubLanguage: "JAVA", // Currently selected language for code stub editing
 
     // API State
@@ -85,7 +89,11 @@ const createProblemSlice = createSlice({
       const { language, codeStub } = action.payload;
       // Ensure the language key exists before updating
       if (!state.codeStubs[language]) {
-        state.codeStubs[language] = { startSnippet: "", endSnippet: "", userSnippet: "" };
+        state.codeStubs[language] = {
+          startSnippet: "",
+          endSnippet: "",
+          userSnippet: "",
+        };
       }
       state.codeStubs[language] = { ...state.codeStubs[language], ...codeStub };
     },
@@ -97,7 +105,11 @@ const createProblemSlice = createSlice({
       state.markdownText = "";
       state.difficulty = "easy";
       state.testCases = [{ input: "", output: "" }];
-      state.codeStubs = {};
+      state.codeStubs = {
+        JAVA: { startSnippet: "", endSnippet: "", userSnippet: "" },
+        CPP: { startSnippet: "", endSnippet: "", userSnippet: "" },
+        PYTHON: { startSnippet: "", endSnippet: "", userSnippet: "" },
+      };
       state.currentCodeStubLanguage = "JAVA";
       state.publishSuccess = false;
       state.publishError = null;

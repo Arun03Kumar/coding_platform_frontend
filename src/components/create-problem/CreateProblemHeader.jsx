@@ -53,7 +53,7 @@ export default function CreateProblemHeader() {
 
     // Build codeStubs array from the codeStubs object
     const codeStubsArray = [];
-    Object.entries(codeStubs).forEach(([language, stub]) => {
+  Object.entries(codeStubs || {}).forEach(([language, stub]) => {
       const hasAnySnippet =
         (stub.startSnippet && stub.startSnippet.trim()) ||
         (stub.endSnippet && stub.endSnippet.trim()) ||

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, memo } from "react";
+import React, { useEffect, useRef, useCallback, memo } from "react";
 import dynamic from "next/dynamic";
 import {
   Select,
@@ -35,7 +35,7 @@ function EnhancedCodeStubPanelComponent({
   onCodeStubUpdate,
 }) {
   const prevLanguageRef = useRef(currentLanguage);
-  
+
   // Get current language code stub or initialize empty
   const currentStub = codeStubs[currentLanguage] || {
     startSnippet: "",
@@ -64,36 +64,29 @@ function EnhancedCodeStubPanelComponent({
         userSnippet: "",
       };
 
-      // Update refs
+      // Update refs first (editors will mount/remount with keys)
       starterRef.current = newStub.startSnippet || "";
       endRef.current = newStub.endSnippet || "";
       userRef.current = newStub.userSnippet || "";
-
-      // Update editors if mounted
-      if (starterEditorRef.current) {
-        starterEditorRef.current.setValue(starterRef.current);
-      }
-      if (endEditorRef.current) {
-        endEditorRef.current.setValue(endRef.current);
-      }
-      if (userEditorRef.current) {
-        userEditorRef.current.setValue(userRef.current);
-      }
-
       prevLanguageRef.current = currentLanguage;
     }
   }, [currentLanguage, codeStubs]);
 
+  const flushNow = useCallback(() => {
+    // Immediate persist (used before language switch / unmount)
+    onCodeStubUpdate(currentLanguage, {
+      startSnippet: starterRef.current,
+      endSnippet: endRef.current,
+      userSnippet: userRef.current,
+    });
+  }, [currentLanguage, onCodeStubUpdate]);
+
   const pushUp = useCallback(() => {
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     debounceTimerRef.current = setTimeout(() => {
-      onCodeStubUpdate(currentLanguage, {
-        startSnippet: starterRef.current,
-        endSnippet: endRef.current,
-        userSnippet: userRef.current,
-      });
+      flushNow();
     }, DEBOUNCE_MS);
-  }, [currentLanguage, onCodeStubUpdate]);
+  }, [flushNow]);
 
   const commonOptions = {
     fontSize: 13,
@@ -120,19 +113,25 @@ function EnhancedCodeStubPanelComponent({
 
   const handleStarterMount = (editor) => {
     starterEditorRef.current = editor;
-    editor.setValue(starterRef.current);
+    if (editor.getValue() !== starterRef.current) {
+      editor.setValue(starterRef.current);
+    }
     attachChangeListener(editor, "starter");
   };
 
   const handleEndMount = (editor) => {
     endEditorRef.current = editor;
-    editor.setValue(endRef.current);
+    if (editor.getValue() !== endRef.current) {
+      editor.setValue(endRef.current);
+    }
     attachChangeListener(editor, "end");
   };
 
   const handleUserMount = (editor) => {
     userEditorRef.current = editor;
-    editor.setValue(userRef.current);
+    if (editor.getValue() !== userRef.current) {
+      editor.setValue(userRef.current);
+    }
     attachChangeListener(editor, "user");
   };
 
@@ -149,7 +148,14 @@ function EnhancedCodeStubPanelComponent({
       <div className="flex flex-wrap items-center gap-4 pb-4 border-b border-border">
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground">Language</p>
-          <Select value={currentLanguage} onValueChange={onLanguageChange}>
+          <Select
+            value={currentLanguage}
+            onValueChange={(nextLang) => {
+              // Flush pending edits before switching language
+              flushNow();
+              onLanguageChange(nextLang);
+            }}
+          >
             <SelectTrigger className="w-40 h-8 text-xs">
               <SelectValue placeholder="Language" />
             </SelectTrigger>
@@ -182,6 +188,7 @@ function EnhancedCodeStubPanelComponent({
           </div>
           <div className="border border-border rounded-lg overflow-hidden bg-muted/5 h-[45vh]">
             <MonacoEditor
+              key={`starter-${currentLanguage}`}
               path={`starter-${currentLanguage}`}
               language={monacoLanguage}
               theme="vs-dark"
@@ -205,6 +212,7 @@ function EnhancedCodeStubPanelComponent({
           </div>
           <div className="border border-border rounded-lg overflow-hidden bg-muted/5 h-[45vh]">
             <MonacoEditor
+              key={`user-${currentLanguage}`}
               path={`user-${currentLanguage}`}
               language={monacoLanguage}
               theme="vs-dark"
@@ -228,6 +236,7 @@ function EnhancedCodeStubPanelComponent({
           </div>
           <div className="border border-border rounded-lg overflow-hidden bg-muted/5 h-[45vh]">
             <MonacoEditor
+              key={`end-${currentLanguage}`}
               path={`end-${currentLanguage}`}
               language={monacoLanguage}
               theme="vs-dark"
