@@ -14,7 +14,7 @@ export const fetchProblem = createAsyncThunk(
 
     // Find code stub for current language
     const stub = problemData.codeStubs?.find((s) => s.language === language);
-    const userCode = stub?.startSnippet || "";
+    const userCode = stub?.userSnippet || "";
 
     return { ...problemData, userCode };
   }
@@ -40,8 +40,8 @@ const problemSlice = createSlice({
         const stub = state.data.codeStubs.find(
           (s) => s.language === action.payload
         );
-        if (stub?.startSnippet) {
-          state.userCode = stub.startSnippet;
+        if (stub?.userSnippet) {
+          state.userCode = stub.userSnippet;
         }
       }
     },

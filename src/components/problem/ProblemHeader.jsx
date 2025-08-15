@@ -26,6 +26,7 @@ export default function ProblemHeader({ problemId }) {
   };
 
   const handleRun = () => {
+    console.log("Running code with language:", language, userCode);
     dispatch(runCode({ id: problemId, userCode, language }));
   };
 
