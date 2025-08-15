@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ThemeToggle from "@/components/ThemeToggle";
+import ReduxProvider from "@/components/ReduxProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,14 +24,16 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* <div className="sticky top-0 z-50">
-          <header className="h-14 border-b border-border flex items-center px-4">
-            <div className="flex-1" />
-            <ThemeToggle />
-          </header>
-        </div> */}
+        <ReduxProvider>
+          {/* <div className="sticky top-0 z-50">
+            <header className="h-14 border-b border-border flex items-center px-4">
+              <div className="flex-1" />
+              <ThemeToggle />
+            </header>
+          </div> */}
 
-        {children}
+          {children}
+        </ReduxProvider>
       </body>
     </html>
   );
