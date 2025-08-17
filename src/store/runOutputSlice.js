@@ -11,11 +11,15 @@ export const runCode = createAsyncThunk(
       language,
     };
 
-    const res = await fetch(`http://localhost:3000/api/v1/submission/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    // const res = await fetch(`http://localhost:3000/api/v1/submission/`, {
+    const res = await fetch(
+      `https://leetcode-problem-service-49a74a7445f0.herokuapp.com/api/v1/submission/`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
 
     const data = await res.json();
     return data;
