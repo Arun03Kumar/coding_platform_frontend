@@ -5,7 +5,8 @@ let socket = null;
 
 export const initializeSocket = (dispatch) => {
   if (!socket) {
-    socket = io("http://localhost:3005");
+    socket = io("https://leetcode-socket-service-d7451d005125.herokuapp.com/");
+    // socket = io("http://localhost:3005");
 
     socket.on("connect", () => {
       console.log("Connected to socket server");
