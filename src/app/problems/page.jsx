@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 const API_BASE =
   process.env.NEXT_PROBLEM_API_BASE ||
-  "https://leetcode-problem-service-49a74a7445f0.herokuapp.com/api/v1/problems" ||
+  "https://leetcode-problem-service-49a74a7445f0.herokuapp.com/api/v1" ||
   "http://localhost:3001/api/v1";
 
 export default function ProblemsListPage() {
