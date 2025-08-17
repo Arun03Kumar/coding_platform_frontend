@@ -1,7 +1,9 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:3001/api/v1";
+  process.env.NEXT_PUBLIC_API_BASE ||
+  "https://leetcode-problem-service-49a74a7445f0.herokuapp.com/api/v1" ||
+  "http://localhost:3001/api/v1";
 
 // Async thunk for fetching problem data
 export const fetchProblem = createAsyncThunk(
