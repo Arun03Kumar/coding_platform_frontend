@@ -5,11 +5,15 @@ export const publishProblem = createAsyncThunk(
   "createProblem/publishProblem",
   async (payload, { rejectWithValue }) => {
     try {
-      const res = await fetch("http://localhost:3001/api/v1/problems", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        "https://leetcode-problem-service-49a74a7445f0.herokuapp.com/api/v1/problems",
+        {
+          // const res = await fetch("http://localhost:3001/api/v1/problems", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!res.ok) {
         const errText = await res.text();
